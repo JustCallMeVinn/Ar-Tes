@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AR Lapisan Bumi</title>
+
+  <!-- A-FRAME -->
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+
+  <!-- AR.js -->
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    #titleBox {
+      position: fixed;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      z-index: 9999;
+      box-shadow: 0 6px 24px rgba(102, 126, 234, 0.4);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      letter-spacing: 0.5px;
+    }
+
+    @media (max-width: 480px) {
+      #titleBox {
+        font-size: 14px;
+        padding: 8px 16px;
+        border-radius: 12px;
+        top: 10px;
+      }
+    }
+
+    .panel {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      width: 85%;
+      max-width: 380px;
+      gap: 12px;
+      z-index: 9999;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    @media (max-width: 480px) {
+      .panel {
+        width: 92%;
+        max-width: 340px;
+        gap: 8px;
+        padding: 12px;
+        border-radius: 16px;
+        bottom: 15px;
+      }
+    }
+
+    .btn {
+      padding: 16px 18px;
+      border: none;
+      border-radius: 14px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    @media (max-width: 480px) {
+      .btn {
+        padding: 12px 10px;
+        font-size: 12px;
+        border-radius: 12px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .btn {
+        padding: 10px 8px;
+        font-size: 11px;
+      }
+    }
+
+    .btn.green {
+      background: linear-gradient(135deg, #51cf66 0%, #2f9e44 100%);
+    }
+
+    .btn.red {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    }
+
+    .btn.blue {
+      background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
+    }
+
+    .btn:active {
+      transform: scale(0.95);
+    }
+
+    .btn.active {
+      transform: scale(1.05);
+      border: 3px solid rgba(255, 255, 255, 0.6);
+    }
+
+    #scanStatus {
+      position: fixed;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      color: white;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(10px);
+      border-radius: 14px;
+      z-index: 9999;
+      display: none;
+      font-weight: bold;
+      font-size: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    @media (max-width: 480px) {
+      #scanStatus {
+        top: 55px;
+        padding: 8px 16px;
+        font-size: 12px;
+        border-radius: 12px;
+      }
+    }
+
+    #markerInfo {
+      position: fixed;
+      top: 110px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 8px 16px;
+      color: white;
+      background: rgba(0, 100, 200, 0.75);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      z-index: 9999;
+      display: none;
+      font-weight: bold;
+      font-size: 13px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    @media (max-width: 480px) {
+      #markerInfo {
+        top: 95px;
+        padding: 6px 12px;
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="titleBox">🌍 AR Lapisan Bumi</div>
+  <div id="scanStatus"></div>
+  <div id="markerInfo"></div>
+
+  <!-- PANEL BUTTONS -->
+  <div class="panel">
+    <button class="btn green active" id="btnModel1" onclick="switchModel('model1')">🔒 Tertutup</button>
+    <button class="btn red" id="btnModel2" onclick="switchModel('model2')">🔓 Terbuka</button>
+    <button class="btn blue" id="btnAutoRotate" onclick="toggleAutoRotate()">🔄 Auto Rotasi</button>
+    <button class="btn blue" onclick="stopRotation()">⏸ Rotasi Berhenti</button>
+    <button class="btn green" onclick="adjustScale('up')">🔼 Scale +</button>
+    <button class="btn red" onclick="adjustScale('down')">🔽 Scale -</button>
+  </div>
+
+  <!-- AR SCENE -->
+  <a-scene embedded arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false;">
+    <a-assets>
+      <!-- Model Lapisan Bumi Tertutup -->
+      <a-asset-item id="bumi1-glb" src="lapisan_bumi.glb"></a-asset-item>
+      
+      <!-- Model Lapisan Bumi Terbuka -->
+      <a-asset-item id="bumi2-glb" src="terbuka.glb"></a-asset-item>
+    </a-assets>
+
+    <!-- MARKER TUNGGAL - Hiro untuk kedua model -->
+    <a-marker preset="hiro" id="marker1">
+      <a-entity id="model1Marker1" 
+                gltf-model="#bumi1-glb"
+                position="0 0 0" 
+                rotation="0 0 0" 
+                scale="1 1 1"
+                visible="true">
+      </a-entity>
+
+      <a-entity id="model2Marker1" 
+                gltf-model="#bumi2-glb"
+                position="0 0 0" 
+                rotation="0 0 0" 
+                scale="1 1 1"
+                visible="false">
+      </a-entity>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    // Model entities untuk marker tunggal
+    let model1Marker1 = document.getElementById('model1Marker1');
+    let model2Marker1 = document.getElementById('model2Marker1');
+    
+    let marker1 = document.getElementById('marker1');
+    let statusBox = document.getElementById('scanStatus');
+    let markerInfo = document.getElementById('markerInfo');
+    let btnModel1 = document.getElementById('btnModel1');
+    let btnModel2 = document.getElementById('btnModel2');
+    
+    let currentModel = 'model1';
+    let currentRotation = { x: 0, y: 0, z: 0 };
+    let autoRotateInterval = null;
+    let isAutoRotating = false;
+    let isAnimating = false;
+    let marker1Detected = false;
+    let currentScale = 1.0;
+
+    /* Status marker */
+    marker1.addEventListener('markerFound', () => {
+      marker1Detected = true;
+      markerInfo.innerHTML = '📍 Marker Hiro Terdeteksi';
+      markerInfo.style.backgroundColor = 'rgba(46, 125, 50, 0.85)';
+      markerInfo.style.display = 'block';
+      showStatus('✔ Marker Terdeteksi!', 'green');
+    });
+    
+    marker1.addEventListener('markerLost', () => {
+      marker1Detected = false;
+      markerInfo.style.display = 'none';
+      showStatus('✖ Marker Hilang', 'red');
+    });
+
+    function showStatus(msg, color) {
+      statusBox.innerHTML = msg;
+      statusBox.style.backgroundColor = color === 'green' ? 'rgba(46, 125, 50, 0.85)' : 'rgba(198, 40, 40, 0.85)';
+      statusBox.style.display = "block";
+      setTimeout(() => statusBox.style.display = "none", 1500);
+    }
+
+    /* SWITCH MODEL WITH ANIMATION */
+    function switchModel(modelName) {
+      if (isAnimating) return;
+      if (modelName === currentModel) return;
+
+      isAnimating = true;
+      
+      let oldModel = currentModel === 'model1' ? model1Marker1 : model2Marker1;
+      let newModel = modelName === 'model1' ? model1Marker1 : model2Marker1;
+
+      animateModelTransition(oldModel, newModel);
+
+      if (modelName === 'model1') {
+        btnModel1.classList.add('active');
+        btnModel2.classList.remove('active');
+        currentModel = 'model1';
+        showStatus('🔒 Bumi Tertutup', 'green');
+      } else {
+        btnModel1.classList.remove('active');
+        btnModel2.classList.add('active');
+        currentModel = 'model2';
+        showStatus('🔓 Bumi Terbuka', 'red');
+      }
+    }
+
+    function animateModelTransition(oldModel, newModel) {
+      let fadeOutSteps = 15;
+      let step = 0;
+      let fadeOutInterval = setInterval(() => {
+        step++;
+        let progress = step / fadeOutSteps;
+        
+        let tempRotation = {
+          x: currentRotation.x,
+          y: currentRotation.y + (progress * 180),
+          z: currentRotation.z
+        };
+        oldModel.setAttribute('rotation', tempRotation);
+        
+        let scale = 1 * (1 - progress * 0.5);
+        oldModel.setAttribute('scale', `${scale} ${scale} ${scale}`);
+
+        if (step >= fadeOutSteps) {
+          clearInterval(fadeOutInterval);
+          oldModel.setAttribute('visible', false);
+          oldModel.setAttribute('scale', '1 1 1');
+          
+          newModel.setAttribute('visible', true);
+          newModel.setAttribute('scale', '0.5 0.5 0.5');
+          
+          let fadeInSteps = 15;
+          let stepIn = 0;
+          let fadeInInterval = setInterval(() => {
+            stepIn++;
+            let progressIn = stepIn / fadeInSteps;
+            
+            let tempRotation = {
+              x: currentRotation.x,
+              y: currentRotation.y - 180 + (progressIn * 180),
+              z: currentRotation.z
+            };
+            newModel.setAttribute('rotation', tempRotation);
+            
+            let scale = 0.5 + (progressIn * 0.5);
+            newModel.setAttribute('scale', `${scale} ${scale} ${scale}`);
+
+            if (stepIn >= fadeInSteps) {
+              clearInterval(fadeInInterval);
+              newModel.setAttribute('scale', '1 1 1');
+              applyRotation();
+              isAnimating = false;
+            }
+          }, 20);
+        }
+      }, 20);
+    }
+
+    /* AUTO ROTATION */
+    function toggleAutoRotate() {
+      let btnAutoRotate = document.getElementById('btnAutoRotate');
+      
+      if (isAutoRotating) {
+        clearInterval(autoRotateInterval);
+        autoRotateInterval = null;
+        isAutoRotating = false;
+        btnAutoRotate.classList.remove('active');
+        showStatus('⏸ Auto Rotasi Berhenti', 'red');
+      } else {
+        isAutoRotating = true;
+        btnAutoRotate.classList.add('active');
+        autoRotateInterval = setInterval(() => {
+          currentRotation.y += 2;
+          applyRotation();
+        }, 50);
+        showStatus('🔄 Auto Rotasi Aktif', 'green');
+      }
+    }
+
+    function stopRotation() {
+      if (autoRotateInterval) {
+        clearInterval(autoRotateInterval);
+        autoRotateInterval = null;
+        isAutoRotating = false;
+        let btnAutoRotate = document.getElementById('btnAutoRotate');
+        btnAutoRotate.classList.remove('active');
+      }
+      showStatus('⏹ Rotasi Berhenti', 'red');
+    }
+
+    function applyRotation() {
+      model1Marker1.setAttribute('rotation', currentRotation);
+      model2Marker1.setAttribute('rotation', currentRotation);
+    }
+
+    /* SCALE ADJUSTMENT FOR DEBUGGING */
+    function adjustScale(direction) {
+      if (direction === 'up') {
+        currentScale += 0.2;
+      } else {
+        currentScale -= 0.2;
+        if (currentScale < 0.2) currentScale = 0.2;
+      }
+      
+      let activeModel = currentModel === 'model1' ? model1Marker1 : model2Marker1;
+      activeModel.setAttribute('scale', `${currentScale} ${currentScale} ${currentScale}`);
+      
+      showStatus(`📏 Scale: ${currentScale.toFixed(1)}x`, 'green');
+    }
+  </script>
+
+</body>
+</html>
