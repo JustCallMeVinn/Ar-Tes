@@ -320,10 +320,15 @@
         step++;
         let progress = step / fadeOutSteps;
         
+        // Get base rotation for new model
+        let baseRotation = currentModel === 'model1' 
+          ? { x: 0, y: 0, z: 0 }      // Tertutup: normal
+          : { x: 0, y: 90, z: 0 };    // Terbuka: putar Y axis
+        
         let tempRotation = {
-          x: currentRotation.x,
-          y: currentRotation.y + (progress * 180),
-          z: currentRotation.z
+          x: baseRotation.x + currentRotation.x,
+          y: baseRotation.y + currentRotation.y + (progress * 180),
+          z: baseRotation.z + currentRotation.z
         };
         oldModel.setAttribute('rotation', tempRotation);
         
@@ -338,6 +343,11 @@
           newModel.setAttribute('visible', true);
           newModel.setAttribute('scale', '0.5 0.5 0.5');
           
+          // Get base rotation for new model
+          let newBaseRotation = currentModel === 'model2' 
+            ? { x: 0, y: 90, z: 0 }    // Terbuka: putar Y axis
+            : { x: 0, y: 0, z: 0 };    // Tertutup: normal
+          
           let fadeInSteps = 15;
           let stepIn = 0;
           let fadeInInterval = setInterval(() => {
@@ -345,9 +355,9 @@
             let progressIn = stepIn / fadeInSteps;
             
             let tempRotation = {
-              x: currentRotation.x,
-              y: currentRotation.y - 180 + (progressIn * 180),
-              z: currentRotation.z
+              x: newBaseRotation.x + currentRotation.x,
+              y: newBaseRotation.y + currentRotation.y - 180 + (progressIn * 180),
+              z: newBaseRotation.z + currentRotation.z
             };
             newModel.setAttribute('rotation', tempRotation);
             
@@ -398,8 +408,19 @@
     }
 
     function applyRotation() {
-      model1Marker1.setAttribute('rotation', currentRotation);
-      model2Marker1.setAttribute('rotation', currentRotation);
+      // Model tertutup: rotasi normal
+      model1Marker1.setAttribute('rotation', {
+        x: currentRotation.x,
+        y: currentRotation.y,
+        z: currentRotation.z
+      });
+      
+      // Model terbuka: putar 90° di Y axis agar lapisan menghadap depan
+      model2Marker1.setAttribute('rotation', {
+        x: currentRotation.x,
+        y: 90 + currentRotation.y,
+        z: currentRotation.z
+      });
     }
 
     /* SCALE ADJUSTMENT FOR DEBUGGING */
